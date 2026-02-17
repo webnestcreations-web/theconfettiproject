@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Confetti Project | Birthday Parties for Hospitalized Children</title>
+<meta name="description" content="We bring real birthday parties to children in hospitals. Always free. A Georgia 501(c)(3) nonprofit.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;500;600;700;800&family=Nunito:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --pink:#F472B6;--pink-deep:#EC4899;--orange:#F59E0B;--orange-warm:#F97316;
+  --purple:#8B5CF6;--purple-deep:#7C3AED;--purple-dark:#5B21B6;
+  --cyan:#22D3EE;--cyan-deep:#06B6D4;--magenta:#E879A8;
+  --green:#10B981;--green-deep:#059669;
+  --white:#FFFDF9;--cream:#FFF8F0;--cream-warm:#FFF3E6;
+  --dark:#1E1035;--dark-mid:#2D1B4E;--text:#4A3560;--text-light:#7B6894;
+  --shadow-card:0 8px 32px rgba(139,92,246,0.15);
+  --shadow-hover:0 14px 44px rgba(139,92,246,0.25);
+  --radius:18px;--radius-sm:12px;
+  --transition:0.3s cubic-bezier(0.4,0,0.2,1);
+}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:72px}
+body{font-family:'Nunito',sans-serif;color:var(--text);background:var(--dark);overflow-x:hidden;line-height:1.7}
+img{max-width:100%;height:auto;display:block}
+a{text-decoration:none;color:inherit}
+h1,h2,h3,h4,h5{font-family:'Baloo 2',cursive;line-height:1.15;color:var(--dark)}
+#confetti-canvas{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:9999}
+
+/* === NAV - DARK === */
+.navbar{position:fixed;top:0;left:0;right:0;z-index:1000;background:var(--dark);border-bottom:1px solid rgba(139,92,246,0.2);transition:var(--transition)}
+.navbar.scrolled{background:rgba(30,16,53,0.97);box-shadow:0 4px 30px rgba(0,0,0,0.3)}
+.nav-inner{max-width:1280px;margin:0 auto;padding:0 24px;display:flex;align-items:center;justify-content:space-between;height:68px}
+.nav-logo img{height:42px;width:auto;filter:drop-shadow(0 0 8px rgba(139,92,246,0.3))}
+.nav-links{display:flex;align-items:center;gap:2px;list-style:none}
+.nav-links a{padding:8px 14px;border-radius:50px;font-weight:600;font-size:0.87rem;color:rgba(255,255,255,0.75);transition:var(--transition)}
+.nav-links a:hover{background:rgba(139,92,246,0.15);color:white}
+.nav-cta{background:linear-gradient(135deg,var(--pink-deep),var(--purple))!important;color:white!important;padding:9px 22px!important;font-weight:700!important;box-shadow:0 4px 20px rgba(236,72,153,0.4)}
+.nav-cta:hover{transform:translateY(-2px);box-shadow:0 6px 25px rgba(236,72,153,0.5)!important}
+.hamburger{display:none;flex-direction:column;gap:5px;background:none;border:none;cursor:pointer;padding:8px}
+.hamburger span{width:24px;height:2.5px;background:white;border-radius:3px;transition:var(--transition)}
+.mobile-menu{display:none;position:fixed;top:68px;left:0;right:0;background:var(--dark);padding:16px 24px 24px;box-shadow:0 8px 30px rgba(0,0,0,0.4);z-index:999;max-height:calc(100vh - 68px);overflow-y:auto}
+.mobile-menu.active{display:block}
+.mobile-menu a{display:block;padding:13px 0;font-weight:600;font-size:1rem;color:rgba(255,255,255,0.8);border-bottom:1px solid rgba(139,92,246,0.12)}
+.mobile-menu .nav-cta-mobile{display:block;margin-top:14px;background:linear-gradient(135deg,var(--pink-deep),var(--purple));color:white;padding:14px;border-radius:50px;font-weight:700;text-align:center}
+
+/* === BUTTONS === */
+.btn{display:inline-flex;align-items:center;gap:8px;padding:15px 34px;border-radius:50px;font-family:'Baloo 2',cursive;font-size:1.02rem;font-weight:700;cursor:pointer;border:none;transition:var(--transition)}
+.btn-primary{background:linear-gradient(135deg,var(--pink-deep),var(--purple));color:white;box-shadow:0 6px 28px rgba(236,72,153,0.4)}
+.btn-primary:hover{transform:translateY(-3px);box-shadow:0 10px 38px rgba(236,72,153,0.5)}
+.btn-secondary{background:white;color:var(--purple-deep);border:2px solid rgba(139,92,246,0.25)}
+.btn-secondary:hover{border-color:var(--purple);transform:translateY(-3px);box-shadow:0 8px 30px rgba(139,92,246,0.2)}
+.btn-orange{background:linear-gradient(135deg,var(--orange),var(--orange-warm));color:white}
+.btn-orange:hover{transform:translateY(-3px);box-shadow:0 8px 28px rgba(245,158,11,0.4)}
+.btn-white{background:white;color:var(--purple-deep);box-shadow:0 4px 15px rgba(0,0,0,0.1)}
+.btn-white:hover{transform:translateY(-3px);box-shadow:0 8px 25px rgba(0,0,0,0.15)}
+.btn-sm{padding:11px 22px;font-size:0.9rem}
+
+/* === HERO === */
+.hero{position:relative;min-height:100vh;display:flex;align-items:center;overflow:hidden;background:linear-gradient(160deg,#1E1035 0%,#2D1B4E 30%,#3D1F6E 60%,#4C1D95 100%)}
+.hero-blob{position:absolute;border-radius:50%;filter:blur(80px);opacity:0.4;animation:float 8s ease-in-out infinite}
+.hero-blob-1{width:500px;height:500px;background:var(--pink-deep);top:-100px;right:-100px;animation-delay:0s}
+.hero-blob-2{width:400px;height:400px;background:var(--purple);bottom:-80px;left:-80px;animation-delay:3s}
+.hero-blob-3{width:300px;height:300px;background:var(--cyan);top:40%;left:30%;animation-delay:5s;opacity:0.2}
+@keyframes float{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(20px,-30px) scale(1.08)}}
+.hero-confetti{position:absolute;border-radius:3px;opacity:0.6;animation:cfall linear infinite}
+@keyframes cfall{0%{transform:translateY(-100vh) rotate(0);opacity:0.7}100%{transform:translateY(100vh) rotate(720deg);opacity:0}}
+.hero-inner{max-width:1280px;margin:0 auto;padding:110px 24px 70px;display:grid;grid-template-columns:1.1fr 0.9fr;gap:50px;align-items:center;position:relative;z-index:2}
+.hero-content{animation:slideUp .8s ease-out}
+@keyframes slideUp{from{opacity:0;transform:translateY(40px)}to{opacity:1;transform:translateY(0)}}
+.hero-badge{display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,0.08);backdrop-filter:blur(10px);padding:7px 18px;border-radius:50px;font-weight:700;font-size:0.82rem;color:rgba(255,255,255,0.9);margin-bottom:22px;border:1px solid rgba(255,255,255,0.12)}
+.hero h1{font-size:clamp(2.3rem,4.8vw,3.6rem);font-weight:800;line-height:1.08;margin-bottom:18px;color:white}
+.hero h1 .highlight{background:linear-gradient(135deg,var(--pink),var(--orange));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero-text{font-size:1.1rem;color:rgba(255,255,255,0.75);margin-bottom:32px;max-width:500px;line-height:1.8}
+.hero-buttons{display:flex;flex-wrap:wrap;gap:14px}
+.hero-visual{position:relative;animation:slideUp 1s ease-out .2s both}
+.hero-card{background:rgba(255,255,255,0.06);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.1);border-radius:24px;padding:32px;position:relative;overflow:hidden}
+.hero-card::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,var(--pink),var(--orange),var(--purple),var(--cyan))}
+.hero-card-emoji{font-size:3.5rem;text-align:center;margin-bottom:12px;animation:bounce 2s ease-in-out infinite}
+@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+.hero-card h3{text-align:center;font-size:1.2rem;color:white;margin-bottom:18px;font-weight:700}
+.hero-stats{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.stat-box{text-align:center;padding:16px 12px;border-radius:var(--radius-sm);background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08)}
+.stat-number{font-size:1.6rem;margin-bottom:2px}
+.stat-label{font-size:0.75rem;font-weight:700;color:rgba(255,255,255,0.65)}
+.floating-emoji{position:absolute;font-size:1.8rem;animation:femoji 6s ease-in-out infinite;z-index:3;filter:drop-shadow(0 2px 8px rgba(0,0,0,0.3))}
+.floating-emoji:nth-child(1){top:-16px;left:-16px}.floating-emoji:nth-child(2){top:-8px;right:-16px;animation-delay:1.5s}
+.floating-emoji:nth-child(3){bottom:-12px;left:30%;animation-delay:3s}.floating-emoji:nth-child(4){bottom:20%;right:-20px;animation-delay:4.5s}
+@keyframes femoji{0%,100%{transform:translateY(0) rotate(0)}25%{transform:translateY(-12px) rotate(8deg)}75%{transform:translateY(8px) rotate(-8deg)}}
+
+/* === COUNTER === */
+.counter-ribbon{background:linear-gradient(135deg,var(--pink-deep),var(--purple-deep),var(--purple-dark));padding:28px 24px}
+.counter-inner{max-width:1100px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px}
+.counter-item{text-align:center;color:white;flex:1;min-width:100px}
+.counter-number{font-family:'Baloo 2',cursive;font-size:2rem;font-weight:800}
+.counter-label{font-size:0.78rem;font-weight:600;opacity:0.85}
+
+/* === SECTIONS === */
+.section{padding:80px 24px}
+.section-header{text-align:center;max-width:640px;margin:0 auto 48px}
+.section-eyebrow{display:inline-flex;align-items:center;gap:6px;font-family:'Baloo 2',cursive;font-size:0.85rem;font-weight:700;color:var(--pink-deep);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:10px}
+.section-title{font-size:clamp(1.8rem,3.5vw,2.5rem);font-weight:800;margin-bottom:12px}
+.section-subtitle{font-size:1.02rem;color:var(--text-light);line-height:1.7}
+
+/* === MISSION === */
+.mission{background:linear-gradient(165deg,#F3EAFF,#FEF0F7,#FFF8F0)}
+.mission-grid{max-width:1200px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:center}
+.mission-emoji-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.mission-emoji-item{background:white;border-radius:16px;padding:20px 12px;text-align:center;box-shadow:0 4px 16px rgba(139,92,246,0.1);transition:var(--transition)}
+.mission-emoji-item:hover{transform:translateY(-4px);box-shadow:var(--shadow-hover)}
+.mission-emoji-item .emoji{font-size:2.2rem;margin-bottom:6px}
+.mission-emoji-item .label{font-size:0.72rem;font-weight:700;color:var(--text-light)}
+.mission-content h2{font-size:2.2rem;margin-bottom:16px}
+.mission-content p{font-size:1.02rem;color:var(--text-light);line-height:1.85;margin-bottom:14px}
+.mission-quote{background:white;border-left:4px solid var(--pink-deep);padding:20px 24px;border-radius:0 var(--radius-sm) var(--radius-sm) 0;margin-top:24px;box-shadow:0 4px 16px rgba(139,92,246,0.08)}
+.mission-quote p{font-style:italic;font-size:1rem;color:var(--dark);margin:0}
+.mission-quote cite{display:block;margin-top:10px;font-size:0.85rem;font-style:normal;font-weight:700;color:var(--pink-deep)}
+
+/* === STEPS === */
+.how-section{background:white}
+.steps-container{max-width:1050px;margin:0 auto;display:grid;grid-template-columns:repeat(3,1fr);gap:24px}
+.step-card{border-radius:var(--radius);padding:32px 26px;text-align:center;transition:var(--transition);position:relative;overflow:hidden;border:2px solid transparent}
+.step-card:nth-child(1){background:linear-gradient(160deg,#FFF0F5,#FECDD3);border-color:rgba(236,72,153,0.15)}
+.step-card:nth-child(2){background:linear-gradient(160deg,#FFF7ED,#FDE68A);border-color:rgba(245,158,11,0.15)}
+.step-card:nth-child(3){background:linear-gradient(160deg,#F3EAFF,#DDD6FE);border-color:rgba(139,92,246,0.15)}
+.step-card:hover{transform:translateY(-6px);box-shadow:var(--shadow-hover)}
+.step-number{width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Baloo 2',cursive;font-size:1.3rem;font-weight:800;color:white;margin:0 auto 16px}
+.step-card:nth-child(1) .step-number{background:var(--pink-deep)}
+.step-card:nth-child(2) .step-number{background:var(--orange)}
+.step-card:nth-child(3) .step-number{background:var(--purple)}
+.step-emoji{font-size:2.5rem;margin-bottom:12px}
+.step-card h3{font-size:1.15rem;margin-bottom:10px}
+.step-card p{font-size:0.9rem;color:var(--text-light);line-height:1.7}
+
+/* === PICTURE THIS === */
+.picture-this{background:linear-gradient(135deg,var(--dark) 0%,var(--purple-dark) 50%,var(--dark-mid) 100%);padding:70px 24px;position:relative;overflow:hidden}
+.picture-inner{max-width:760px;margin:0 auto;text-align:center;position:relative;z-index:2}
+.picture-inner h2{font-size:clamp(1.6rem,3vw,2.3rem);color:white;font-weight:800;margin-bottom:20px;line-height:1.25}
+.picture-inner p{color:rgba(255,255,255,0.85);font-size:1.05rem;line-height:1.9;max-width:620px;margin:0 auto 10px}
+
+/* === ITEMS === */
+.items-section{background:linear-gradient(165deg,#FEF0F7,#F3EAFF 50%,#E8F8FD)}
+.items-grid{max-width:1050px;margin:0 auto;display:grid;grid-template-columns:repeat(4,1fr);gap:18px}
+.item-card{background:white;border-radius:16px;padding:26px 18px;text-align:center;box-shadow:0 4px 16px rgba(139,92,246,0.08);transition:var(--transition)}
+.item-card:hover{transform:translateY(-5px);box-shadow:var(--shadow-hover)}
+.item-emoji{font-size:2.8rem;margin-bottom:10px}
+.item-card h4{font-size:0.95rem;margin-bottom:6px}
+.item-card p{font-size:0.8rem;color:var(--text-light);line-height:1.5}
+
+/* === BIRTHDAY WALL === */
+.birthday-wall{background:linear-gradient(165deg,#FDE68A20,#FBCFE820,#C4B5FD20);background-color:#FFF8F0}
+.wall-grid{max-width:1100px;margin:0 auto;display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+.wall-card{background:white;border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow-card);transition:var(--transition)}
+.wall-card:hover{transform:translateY(-5px);box-shadow:var(--shadow-hover)}
+.wall-image{width:100%;height:180px;display:flex;align-items:center;justify-content:center;font-size:4rem;position:relative}
+.wall-card:nth-child(1) .wall-image{background:linear-gradient(135deg,#FCA5A5,#FDE68A)}
+.wall-card:nth-child(2) .wall-image{background:linear-gradient(135deg,#A78BFA,#67E8F9)}
+.wall-card:nth-child(3) .wall-image{background:linear-gradient(135deg,#FDE68A,#F9A8D4)}
+.wall-card:nth-child(4) .wall-image{background:linear-gradient(135deg,#67E8F9,#A78BFA)}
+.wall-card:nth-child(5) .wall-image{background:linear-gradient(135deg,#F9A8D4,#FDE68A)}
+.wall-card:nth-child(6) .wall-image{background:linear-gradient(135deg,#A78BFA,#FCA5A5)}
+.wall-image-tag{position:absolute;top:10px;right:10px;background:rgba(255,255,255,0.92);padding:3px 10px;border-radius:50px;font-size:0.72rem;font-weight:700;color:var(--purple-deep)}
+.wall-info{padding:16px 20px}
+.wall-info h4{font-size:1rem;margin-bottom:3px}
+.wall-info p{font-size:0.82rem;color:var(--text-light);line-height:1.5}
+.wall-info .wall-age{font-weight:700;color:var(--pink-deep);font-size:0.78rem;margin-top:5px}
+.wall-cta{max-width:1100px;margin:32px auto 0;text-align:center}
+
+/* === SEND A CARD === */
+.send-card-section{background:white}
+.send-card-wrapper{max-width:1050px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:center}
+.card-preview{background:linear-gradient(160deg,#FFF8F0,#FEF0F7,#F3EAFF);border-radius:var(--radius);padding:36px;box-shadow:var(--shadow-card);border:3px dashed rgba(139,92,246,0.2);min-height:320px;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;transition:var(--transition)}
+.card-preview.filled{border-color:var(--pink-deep);border-style:solid;box-shadow:var(--shadow-hover)}
+.card-preview .card-top-decor{font-size:2.2rem;margin-bottom:10px}
+.card-preview .card-to{font-family:'Baloo 2',cursive;font-size:1.3rem;color:var(--purple-deep);margin-bottom:6px}
+.card-preview .card-message-display{font-size:0.95rem;color:var(--text);line-height:1.8;max-width:300px;font-style:italic;min-height:50px}
+.card-preview .card-from{font-weight:700;color:var(--pink-deep);margin-top:14px;font-size:0.9rem}
+.card-preview .card-bottom-decor{font-size:1.3rem;margin-top:10px}
+.form-group{margin-bottom:14px}
+.form-group label{display:block;font-weight:700;font-size:0.84rem;color:var(--text);margin-bottom:5px}
+.form-group input,.form-group select,.form-group textarea{width:100%;padding:12px 16px;border:2px solid rgba(139,92,246,0.12);border-radius:10px;font-family:'Nunito',sans-serif;font-size:0.92rem;color:var(--text);transition:var(--transition);background:var(--white)}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{outline:none;border-color:var(--purple);box-shadow:0 0 0 3px rgba(139,92,246,0.1)}
+.form-group textarea{resize:vertical;min-height:80px}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.form-submit{width:100%;padding:14px;border:none;border-radius:50px;background:linear-gradient(135deg,var(--pink-deep),var(--purple));color:white;font-family:'Baloo 2',cursive;font-size:1rem;font-weight:700;cursor:pointer;transition:var(--transition);box-shadow:0 4px 18px rgba(236,72,153,0.3)}
+.form-submit:hover{transform:translateY(-2px);box-shadow:0 6px 24px rgba(236,72,153,0.4)}
+
+/* === UPCOMING === */
+.upcoming-section{background:linear-gradient(165deg,#F3EAFF,#FEF0F7)}
+.upcoming-grid{max-width:850px;margin:0 auto;display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.upcoming-card{background:white;border-radius:16px;padding:22px 16px;text-align:center;box-shadow:0 4px 16px rgba(139,92,246,0.1);transition:var(--transition);position:relative;overflow:hidden}
+.upcoming-card:hover{transform:translateY(-4px);box-shadow:var(--shadow-hover)}
+.upcoming-card::before{content:'';position:absolute;top:0;left:0;right:0;height:4px}
+.upcoming-card:nth-child(1)::before{background:var(--pink)}.upcoming-card:nth-child(2)::before{background:var(--orange)}.upcoming-card:nth-child(3)::before{background:var(--purple)}.upcoming-card:nth-child(4)::before{background:var(--cyan)}
+.upcoming-emoji{font-size:2.2rem;margin-bottom:6px}
+.upcoming-name{font-family:'Baloo 2',cursive;font-size:1.1rem;color:var(--dark)}
+.upcoming-detail{font-size:0.8rem;color:var(--text-light);font-weight:600;margin-top:3px}
+.upcoming-theme{font-size:0.73rem;color:var(--pink-deep);font-weight:700;margin-top:5px;padding:3px 10px;background:rgba(236,72,153,0.08);border-radius:50px;display:inline-block}
+
+/* === REQUEST === */
+.request-section{background:white}
+.request-wrapper{max-width:880px;margin:0 auto;background:linear-gradient(135deg,var(--dark) 0%,var(--purple-dark) 50%,var(--pink-deep) 100%);border-radius:24px;padding:50px;text-align:center;color:white;position:relative;overflow:hidden;box-shadow:0 20px 60px rgba(124,58,237,0.3)}
+.request-wrapper h2{color:white;font-size:2rem;margin-bottom:14px}
+.request-wrapper>p{font-size:1.02rem;opacity:0.9;max-width:560px;margin:0 auto 10px;line-height:1.7}
+.request-features{display:flex;justify-content:center;gap:24px;margin:24px 0;flex-wrap:wrap}
+.request-feature{display:flex;align-items:center;gap:7px;font-weight:700;font-size:0.92rem}
+.request-feature .check{width:26px;height:26px;background:rgba(255,255,255,0.15);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.8rem}
+.request-buttons{display:flex;justify-content:center;gap:14px;margin-top:28px;flex-wrap:wrap}
+
+/* === FUNDRAISER === */
+.fundraiser-section{background:linear-gradient(165deg,#FDE68A20,#FBCFE820);background-color:var(--cream-warm)}
+.fundraiser-wrapper{max-width:1100px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:center}
+.fundraiser-content h2{font-size:2rem;margin-bottom:14px}
+.fundraiser-content p{font-size:1rem;color:var(--text-light);line-height:1.75;margin-bottom:10px}
+.fundraiser-details{margin:20px 0;display:flex;flex-direction:column;gap:14px}
+.fundraiser-detail{display:flex;align-items:center;gap:12px}
+.fundraiser-detail-icon{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0;background:rgba(139,92,246,0.1)}
+.fundraiser-detail-text h4{font-size:0.9rem;margin-bottom:1px}
+.fundraiser-detail-text p{font-size:0.84rem;color:var(--text-light);margin:0}
+.countdown-card{background:white;border-radius:var(--radius);padding:32px;box-shadow:var(--shadow-card);text-align:center}
+.countdown-card h3{font-size:1.3rem;color:var(--purple-deep);margin-bottom:20px}
+.countdown-boxes{display:flex;justify-content:center;gap:12px}
+.countdown-box{background:linear-gradient(135deg,rgba(139,92,246,0.08),rgba(244,114,182,0.08));border-radius:var(--radius-sm);padding:14px 18px;min-width:72px}
+.countdown-box .num{font-family:'Baloo 2',cursive;font-size:2rem;font-weight:800;color:var(--purple-deep);display:block}
+.countdown-box .lbl{font-size:0.7rem;font-weight:700;color:var(--text-light);text-transform:uppercase}
+.fundraiser-tiers{margin-top:20px;display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.tier-card{background:white;border-radius:var(--radius-sm);padding:14px;text-align:center;box-shadow:0 4px 14px rgba(139,92,246,0.08);transition:var(--transition)}
+.tier-card:hover{transform:scale(1.04);box-shadow:var(--shadow-hover)}
+.tier-name{font-family:'Baloo 2',cursive;font-size:0.88rem;margin-bottom:2px}
+.tier-price{font-family:'Baloo 2',cursive;font-size:1.2rem;color:var(--purple-deep);font-weight:800}
+
+/* === FOUNDERS === */
+.founders-section{background:linear-gradient(165deg,#F3EAFF,#FEF0F7)}
+.founders-grid{max-width:1050px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:28px}
+.founder-card{background:white;border-radius:var(--radius);padding:32px;box-shadow:var(--shadow-card);transition:var(--transition);position:relative;overflow:hidden}
+.founder-card::before{content:'';position:absolute;top:0;left:0;right:0;height:4px}
+.founder-card:nth-child(1)::before{background:linear-gradient(90deg,var(--pink),var(--orange))}
+.founder-card:nth-child(2)::before{background:linear-gradient(90deg,var(--purple),var(--cyan))}
+.founder-card:hover{transform:translateY(-4px);box-shadow:var(--shadow-hover)}
+.founder-avatar{width:64px;height:64px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.8rem;margin-bottom:16px}
+.founder-card:nth-child(1) .founder-avatar{background:linear-gradient(135deg,#FEE2E2,#FDE68A)}
+.founder-card:nth-child(2) .founder-avatar{background:linear-gradient(135deg,#DDD6FE,#A5F3FC)}
+.founder-name{font-size:1.25rem;font-weight:800;margin-bottom:3px}
+.founder-role{font-size:0.82rem;font-weight:700;color:var(--pink-deep);margin-bottom:14px}
+.founder-bio{font-size:0.9rem;color:var(--text-light);line-height:1.75}
+.founder-highlight{margin-top:14px;padding:10px 14px;background:linear-gradient(135deg,rgba(139,92,246,0.04),rgba(244,114,182,0.04));border-radius:10px;font-size:0.82rem;font-weight:600;color:var(--purple-deep)}
+
+/* === GET INVOLVED === */
+.involved-section{background:white}
+.involvement-grid{max-width:1100px;margin:0 auto;display:grid;grid-template-columns:repeat(4,1fr);gap:20px}
+.involve-card{border-radius:var(--radius);padding:30px 22px;box-shadow:var(--shadow-card);transition:var(--transition);text-align:center}
+.involve-card:nth-child(1){background:linear-gradient(170deg,#FFF0F5,white)}
+.involve-card:nth-child(2){background:linear-gradient(170deg,#FFF7ED,white)}
+.involve-card:nth-child(3){background:linear-gradient(170deg,#F3EAFF,white)}
+.involve-card:nth-child(4){background:linear-gradient(170deg,#ECFDF5,white)}
+.involve-card:hover{transform:translateY(-6px);box-shadow:var(--shadow-hover)}
+.involve-icon{font-size:2.2rem;margin-bottom:14px}
+.involve-card h3{font-size:1.1rem;margin-bottom:8px}
+.involve-card p{font-size:0.88rem;color:var(--text-light);line-height:1.65;margin-bottom:18px}
+.involve-btn{display:inline-flex;padding:10px 20px;border-radius:50px;font-weight:700;font-size:0.84rem;transition:var(--transition)}
+.involve-card:nth-child(1) .involve-btn{background:rgba(236,72,153,0.1);color:var(--pink-deep)}
+.involve-card:nth-child(1) .involve-btn:hover{background:var(--pink-deep);color:white}
+.involve-card:nth-child(2) .involve-btn{background:rgba(245,158,11,0.1);color:var(--orange-warm)}
+.involve-card:nth-child(2) .involve-btn:hover{background:var(--orange-warm);color:white}
+.involve-card:nth-child(3) .involve-btn{background:rgba(124,58,237,0.1);color:var(--purple-deep)}
+.involve-card:nth-child(3) .involve-btn:hover{background:var(--purple-deep);color:white}
+.involve-card:nth-child(4) .involve-btn{background:rgba(16,185,129,0.1);color:var(--green-deep)}
+.involve-card:nth-child(4) .involve-btn:hover{background:var(--green-deep);color:white}
+
+/* === DONATE === */
+.donate-section{background:linear-gradient(165deg,var(--dark),var(--purple-dark));padding:80px 24px;color:white}
+.donate-wrapper{max-width:1100px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:center}
+.donate-content h2{font-size:2.2rem;margin-bottom:14px;color:white}
+.donate-content p{font-size:1rem;color:rgba(255,255,255,0.8);line-height:1.75;margin-bottom:10px}
+.donate-amounts{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin:24px 0}
+.amount-card{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:var(--radius-sm);padding:18px;text-align:center;transition:var(--transition);cursor:pointer}
+.amount-card:hover{background:rgba(255,255,255,0.12);border-color:var(--pink);transform:scale(1.03)}
+.amount-value{font-family:'Baloo 2',cursive;font-size:1.6rem;font-weight:800;color:white}
+.amount-desc{font-size:0.78rem;color:rgba(255,255,255,0.7);font-weight:600;margin-top:3px}
+.impact-card{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:20px;display:flex;align-items:center;gap:16px;transition:var(--transition);margin-bottom:12px}
+.impact-card:last-child{margin-bottom:0}
+.impact-card:hover{background:rgba(255,255,255,0.1);transform:translateX(6px)}
+.impact-emoji{font-size:2rem;flex-shrink:0}
+.impact-card h4{font-size:0.95rem;color:white;margin-bottom:3px}
+.impact-card p{font-size:0.82rem;color:rgba(255,255,255,0.7);line-height:1.5}
+
+/* === FAQ === */
+.faq-section{background:var(--cream)}
+.faq-container{max-width:740px;margin:0 auto}
+.faq-item{background:white;border-radius:var(--radius-sm);margin-bottom:10px;box-shadow:0 3px 12px rgba(139,92,246,0.06);overflow:hidden;border:1px solid rgba(139,92,246,0.06)}
+.faq-question{padding:18px 24px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;font-family:'Baloo 2',cursive;font-size:1.02rem;font-weight:700;color:var(--dark);transition:var(--transition)}
+.faq-question:hover{color:var(--purple-deep)}
+.faq-toggle{width:28px;height:28px;border-radius:50%;background:rgba(139,92,246,0.08);display:flex;align-items:center;justify-content:center;font-size:1.2rem;color:var(--purple);transition:var(--transition);flex-shrink:0}
+.faq-item.active .faq-toggle{background:var(--purple);color:white;transform:rotate(45deg)}
+.faq-answer{max-height:0;overflow:hidden;transition:max-height .4s ease}
+.faq-answer-inner{padding:0 24px 18px;font-size:0.92rem;color:var(--text-light);line-height:1.75}
+
+/* === CONTACT === */
+.contact-section{background:white}
+.contact-grid{max-width:860px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:32px}
+.contact-info-card,.contact-form-card{background:var(--cream);border-radius:var(--radius);padding:32px;border:1px solid rgba(139,92,246,0.06)}
+.contact-item{display:flex;align-items:flex-start;gap:14px;margin-bottom:24px}
+.contact-item:last-child{margin-bottom:0}
+.contact-icon{width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.15rem;flex-shrink:0;background:white}
+.contact-item h4{font-size:0.9rem;margin-bottom:3px}
+.contact-item p,.contact-item a{font-size:0.88rem;color:var(--text-light)}
+.contact-item a:hover{color:var(--purple-deep)}
+.contact-form-card h3{font-size:1.3rem;margin-bottom:20px}
+
+/* === FOOTER === */
+.footer{background:var(--dark);color:rgba(255,255,255,0.6);padding:50px 24px 24px}
+.footer-inner{max-width:1200px;margin:0 auto;display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:36px}
+.footer-brand h3{font-size:1.2rem;color:white;margin-bottom:10px}
+.footer-brand p{font-size:0.85rem;line-height:1.65;margin-bottom:14px}
+.footer-social{display:flex;gap:10px}
+.footer-social a{width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:center;font-size:1rem;transition:var(--transition)}
+.footer-social a:hover{background:var(--pink-deep);transform:translateY(-2px)}
+.footer-col h4{color:white;font-size:0.92rem;margin-bottom:14px}
+.footer-col a{display:block;font-size:0.84rem;padding:4px 0;transition:var(--transition)}
+.footer-col a:hover{color:var(--pink);transform:translateX(3px)}
+.footer-bottom{max-width:1200px;margin:32px auto 0;padding-top:20px;border-top:1px solid rgba(255,255,255,0.06);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;font-size:0.8rem}
+
+/* === MODAL === */
+.modal-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:10000;align-items:center;justify-content:center}
+.modal-overlay.active{display:flex}
+.modal{background:white;border-radius:var(--radius);padding:40px;max-width:440px;width:90%;text-align:center;position:relative;animation:slideUp .4s ease-out}
+.modal-emoji{font-size:3.5rem;margin-bottom:12px}
+.modal h3{font-size:1.5rem;margin-bottom:10px}
+.modal p{font-size:0.95rem;color:var(--text-light);line-height:1.65;margin-bottom:20px}
+.modal-close{position:absolute;top:14px;right:14px;background:none;border:none;font-size:1.4rem;cursor:pointer;color:var(--text-light)}
+
+.reveal{opacity:0;transform:translateY(24px);transition:opacity .6s ease,transform .6s ease}
+.reveal.visible{opacity:1;transform:translateY(0)}
+
+@media(max-width:1024px){.hero-inner,.mission-grid,.donate-wrapper,.send-card-wrapper,.fundraiser-wrapper{grid-template-columns:1fr}.hero-inner{text-align:center}.hero-text{margin:0 auto 32px}.hero-buttons{justify-content:center}.hero-visual{max-width:440px;margin:0 auto}.mission-visual{order:2;max-width:440px;margin:0 auto}.footer-inner{grid-template-columns:1fr 1fr}.involvement-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:768px){.nav-links{display:none}.hamburger{display:flex}.steps-container,.involvement-grid{grid-template-columns:1fr;max-width:400px}.items-grid{grid-template-columns:1fr 1fr}.wall-grid,.founders-grid{grid-template-columns:1fr}.contact-grid{grid-template-columns:1fr}.counter-inner{gap:16px}.footer-inner{grid-template-columns:1fr}.footer-bottom{flex-direction:column;text-align:center}.form-row{grid-template-columns:1fr}.fundraiser-tiers{grid-template-columns:1fr}.upcoming-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:480px){.items-grid,.upcoming-grid{grid-template-columns:1fr}.hero-stats,.donate-amounts{grid-template-columns:1fr}.request-features{flex-direction:column;align-items:center}.hero-buttons{flex-direction:column;align-items:center}.counter-inner{flex-direction:column;gap:8px}}
+</style>
+</head>
+<body>
+<canvas id="confetti-canvas"></canvas>
+<div class="modal-overlay" id="cardModal"><div class="modal"><button class="modal-close" onclick="document.getElementById('cardModal').classList.remove('active')">&times;</button><div class="modal-emoji">🎉💌🎈</div><h3>Card Sent!</h3><p>Our team will print your card and deliver it to a birthday kid's hospital room. You just made someone's day brighter.</p><a href="#" class="btn btn-primary btn-sm" onclick="document.getElementById('cardModal').classList.remove('active');return false">Keep Celebrating!</a></div></div>
+
+<nav class="navbar" id="navbar"><div class="nav-inner"><a href="#" class="nav-logo"><img src="logo.png" alt="The Confetti Project"></a><ul class="nav-links"><li><a href="#mission">Mission</a></li><li><a href="#how-it-works">How It Works</a></li><li><a href="#birthday-wall">Birthday Wall</a></li><li><a href="#send-card">Send a Card</a></li><li><a href="#request">Request a Party</a></li><li><a href="#fundraiser">May Gala</a></li><li><a href="#donate" class="nav-cta">Donate 💖</a></li></ul><button class="hamburger" id="hamburger" aria-label="Menu"><span></span><span></span><span></span></button></div><div class="mobile-menu" id="mobile-menu"><a href="#mission" onclick="closeMobile()">Mission</a><a href="#how-it-works" onclick="closeMobile()">How It Works</a><a href="#birthday-wall" onclick="closeMobile()">Birthday Wall</a><a href="#send-card" onclick="closeMobile()">Send a Card</a><a href="#request" onclick="closeMobile()">Request a Party</a><a href="#fundraiser" onclick="closeMobile()">May Gala</a><a href="#donate" class="nav-cta-mobile" onclick="closeMobile()">Donate 💖</a></div></nav>
+
+<section class="hero"><div class="hero-blob hero-blob-1"></div><div class="hero-blob hero-blob-2"></div><div class="hero-blob hero-blob-3"></div><div class="hero-confetti" style="left:8%;width:10px;height:8px;background:var(--pink);animation-duration:7s"></div><div class="hero-confetti" style="left:20%;width:8px;height:12px;background:var(--orange);animation-duration:9s;animation-delay:1s"></div><div class="hero-confetti" style="left:35%;width:12px;height:8px;background:var(--cyan);animation-duration:6s;animation-delay:2s"></div><div class="hero-confetti" style="left:55%;width:8px;height:10px;background:var(--pink-deep);animation-duration:10s;animation-delay:3s"></div><div class="hero-confetti" style="left:75%;width:10px;height:8px;background:var(--purple);animation-duration:7s;animation-delay:1.5s"></div><div class="hero-confetti" style="left:90%;width:8px;height:12px;background:var(--orange);animation-duration:9s;animation-delay:4s"></div>
+<div class="hero-inner"><div class="hero-content"><div class="hero-badge">🎊 A 501(c)(3) Nonprofit · Always Free for Families</div><h1>We Bring the <span class="highlight">Birthday Party</span> to Your Child's Hospital Room</h1><p class="hero-text">Balloons, cake, gifts, decorations, and a room full of joy — delivered to children ages 1–18 who can't celebrate at home. Completely free. No catch. Just confetti.</p><div class="hero-buttons"><a href="#request" class="btn btn-primary">Request a Celebration 🎈</a><a href="#how-it-works" class="btn btn-secondary" style="background:rgba(255,255,255,0.08);color:white;border-color:rgba(255,255,255,0.2)">See What We Do</a></div></div><div class="hero-visual"><div class="floating-emoji">🎈</div><div class="floating-emoji">🎂</div><div class="floating-emoji">⭐</div><div class="floating-emoji">🎁</div><div class="hero-card"><div class="hero-card-emoji">🎉</div><h3>What a Celebration Looks Like</h3><div class="hero-stats"><div class="stat-box"><div class="stat-number">🎈</div><div class="stat-label">Balloons & Banners Fill the Room</div></div><div class="stat-box"><div class="stat-number">🎂</div><div class="stat-label">A Real Birthday Cake</div></div><div class="stat-box"><div class="stat-number">🎁</div><div class="stat-label">Personalized Gifts</div></div><div class="stat-box"><div class="stat-number">💖</div><div class="stat-label">100% Free for Families</div></div></div></div></div></div></section>
+
+<div class="counter-ribbon"><div class="counter-inner"><div class="counter-item"><div class="counter-number" id="counter-celebrations">0</div><div class="counter-label">Celebrations</div></div><div class="counter-item"><div class="counter-number" id="counter-smiles">0</div><div class="counter-label">Smiles</div></div><div class="counter-item"><div class="counter-number" id="counter-hospitals">0</div><div class="counter-label">Hospitals</div></div><div class="counter-item"><div class="counter-number" id="counter-volunteers">0</div><div class="counter-label">Volunteers</div></div><div class="counter-item"><div class="counter-number" id="counter-cards">0</div><div class="counter-label">Cards Sent</div></div></div></div>
+
+<section class="section mission" id="mission"><div class="mission-grid"><div class="mission-visual reveal"><div class="mission-emoji-grid"><div class="mission-emoji-item"><div class="emoji">🎂</div><div class="label">Real Cake</div></div><div class="mission-emoji-item"><div class="emoji">🎈</div><div class="label">Balloons</div></div><div class="mission-emoji-item"><div class="emoji">🎁</div><div class="label">Gifts</div></div><div class="mission-emoji-item"><div class="emoji">🎨</div><div class="label">Crafts</div></div><div class="mission-emoji-item"><div class="emoji">👑</div><div class="label">Crowns</div></div><div class="mission-emoji-item"><div class="emoji">🎊</div><div class="label">Confetti!</div></div><div class="mission-emoji-item"><div class="emoji">🌈</div><div class="label">Themes</div></div><div class="mission-emoji-item"><div class="emoji">📸</div><div class="label">Memories</div></div><div class="mission-emoji-item"><div class="emoji">💖</div><div class="label">Love</div></div></div></div><div class="mission-content reveal"><div class="section-eyebrow">🌟 Our Mission</div><h2>We Turn Hospital Rooms into Birthday Parties</h2><p>Imagine your child's hospital room — beeping monitors, sterile walls, routine. Now imagine the door opens and in comes a wave of balloons, streamers, a cake, wrapped gifts, and a team ready to celebrate.</p><p>That's The Confetti Project. We bring full, personalized birthday celebrations to children ages 1–18 who are too sick to leave the hospital. Every party is themed to what the child loves. Every one is free.</p><div class="mission-quote"><p>"During my time in the hospital as a child, my mother made every celebration meaningful — creating moments of normalcy and honoring the gift of life."</p><cite>— Lynn Lilly, Co-Founder & Childhood Cancer Survivor</cite></div></div></div></section>
+
+<section class="section how-section" id="how-it-works"><div class="section-header reveal"><div class="section-eyebrow">🎈 How It Works</div><h2 class="section-title">Your Child Gets a Real Birthday Party</h2><p class="section-subtitle">We handle everything. You don't plan, pay, or stress. Just tell us about your child.</p></div><div class="steps-container"><div class="step-card reveal"><div class="step-number">1</div><div class="step-emoji">💬</div><h3>Tell Us About Your Child</h3><p>Quick form — name, age, birthday, what they love. A parent, nurse, or anyone can request.</p></div><div class="step-card reveal"><div class="step-number">2</div><div class="step-emoji">🎨</div><h3>We Build Their Dream Party</h3><p>We coordinate with the hospital — themed decor, cake, gifts chosen for them, and confetti.</p></div><div class="step-card reveal"><div class="step-number">3</div><div class="step-emoji">🎉</div><h3>The Party Comes to Them</h3><p>We show up, transform the room. Balloons go up, candles get lit. It's their best birthday ever.</p></div></div></section>
+
+<section class="picture-this"><div class="picture-inner reveal"><div style="font-size:3rem;margin-bottom:16px">🎈🎂🎈</div><h2>Picture This: Your Child Wakes Up on Their Birthday...</h2><p>The door opens. Balloons bounce off the ceiling. Streamers go up. A banner with their name. Their favorite character on a plate. A real cake with candles. Wrapped gifts. A crown — because today, they're royalty.</p><p style="margin-bottom:24px">The hospital room disappears. <strong style="color:white">It's a birthday party.</strong> The look on their face? That's why we do this.</p><a href="#request" class="btn btn-primary" style="padding:16px 38px">Request a Celebration →</a></div></section>
+
+<section class="section items-section"><div class="section-header reveal"><div class="section-eyebrow">🎁 Inside Every Celebration</div><h2 class="section-title">Everything a Birthday Party Should Have</h2></div><div class="items-grid"><div class="item-card reveal"><div class="item-emoji">🎈</div><h4>Balloons & Banners</h4><p>Transform the room into a party zone</p></div><div class="item-card reveal"><div class="item-emoji">🎂</div><h4>Birthday Cake</h4><p>Real cake, real candles, real wishes</p></div><div class="item-card reveal"><div class="item-emoji">🎁</div><h4>Personalized Gifts</h4><p>Chosen for what the child loves</p></div><div class="item-card reveal"><div class="item-emoji">🎨</div><h4>Craft Activities</h4><p>Fun creative projects to enjoy</p></div><div class="item-card reveal"><div class="item-emoji">👑</div><h4>Birthday Crown</h4><p>Because they're royalty today</p></div><div class="item-card reveal"><div class="item-emoji">🎊</div><h4>Confetti & Joy</h4><p>Our signature magical moment</p></div><div class="item-card reveal"><div class="item-emoji">📸</div><h4>Keepsakes</h4><p>Memories to hold onto forever</p></div><div class="item-card reveal"><div class="item-emoji">💌</div><h4>Birthday Cards</h4><p>From strangers who care</p></div></div></section>
+
+<section class="section birthday-wall" id="birthday-wall"><div class="section-header reveal"><div class="section-eyebrow">📸 The Birthday Wall</div><h2 class="section-title">Real Celebrations. Real Joy.</h2><p class="section-subtitle">Every story is a child who got to be a kid on their birthday — even from a hospital bed.</p></div><div class="wall-grid"><div class="wall-card reveal"><div class="wall-image">🦸<div class="wall-image-tag">Superhero</div></div><div class="wall-info"><h4>Aiden's 5th Birthday</h4><p>Room transformed into superhero HQ. He wore his cape all week.</p><div class="wall-age">Age 5 · Children's Healthcare of Atlanta</div></div></div><div class="wall-card reveal"><div class="wall-image">🦄<div class="wall-image-tag">Unicorn</div></div><div class="wall-info"><h4>Sofia's 8th Birthday</h4><p>Unicorns, sparkles, and a room full of love.</p><div class="wall-age">Age 8 · Egleston Hospital</div></div></div><div class="wall-card reveal"><div class="wall-image">🏎️<div class="wall-image-tag">Race Car</div></div><div class="wall-info"><h4>Marcus's 12th Birthday</h4><p>Hadn't smiled in three weeks. Then the balloons came.</p><div class="wall-age">Age 12 · Northside Hospital</div></div></div><div class="wall-card reveal"><div class="wall-image">🧜‍♀️<div class="wall-image-tag">Mermaid</div></div><div class="wall-info"><h4>Lily's 4th Birthday</h4><p>Mom cried happy tears. "She needed this. We all did."</p><div class="wall-age">Age 4 · Scottish Rite</div></div></div><div class="wall-card reveal"><div class="wall-image">🦕<div class="wall-image-tag">Dinosaur</div></div><div class="wall-info"><h4>Noah's 6th Birthday</h4><p>Talked about his dino party for weeks. Best medicine ever.</p><div class="wall-age">Age 6 · CHOA</div></div></div><div class="wall-card reveal"><div class="wall-image">🌸<div class="wall-image-tag">Princess</div></div><div class="wall-info"><h4>Emma's 10th Birthday</h4><p>Wore her crown to every appointment. Said it made her brave.</p><div class="wall-age">Age 10 · Egleston</div></div></div></div><div class="wall-cta reveal"><p style="color:var(--text-light);font-size:0.88rem;margin-bottom:14px"><em>Sample stories — real photos replace these as celebrations happen!</em></p><a href="#request" class="btn btn-primary btn-sm">Your Child Could Be Next →</a></div></section>
+
+<section class="section send-card-section" id="send-card"><div class="section-header reveal"><div class="section-eyebrow">💌 Send a Birthday Card</div><h2 class="section-title">Write a Card. Brighten a Birthday.</h2><p class="section-subtitle">Your words become a real card, printed and delivered to a child in the hospital. Takes 30 seconds.</p></div><div class="send-card-wrapper"><div class="card-preview reveal" id="cardPreview"><div class="card-top-decor">🎈🎂🎈</div><div class="card-to" id="previewTo">Happy Birthday!</div><div class="card-message-display" id="previewMessage">Your message appears here as you type...</div><div class="card-from" id="previewFrom">— With love</div><div class="card-bottom-decor">🎉✨🎊</div></div><div class="reveal"><h3 style="font-size:1.4rem;margin-bottom:6px">Write Your Card 💌</h3><p style="font-size:0.9rem;color:var(--text-light);margin-bottom:20px">Even "Happy Birthday, you're awesome!" can make their whole day.</p><div class="form-group"><label>To</label><input type="text" id="cardRecipient" placeholder='"Sofia" or "Birthday Superstar"' oninput="updateCardPreview()"></div><div class="form-group"><label>Your Message</label><textarea id="cardMessage" placeholder="Happy Birthday! You are so brave. I hope today is filled with cake, smiles, and everything you love!" oninput="updateCardPreview()" rows="3"></textarea></div><div class="form-row"><div class="form-group"><label>Your Name</label><input type="text" id="cardFrom" placeholder="Your name" oninput="updateCardPreview()"></div><div class="form-group"><label>City</label><input type="text" id="cardFromCity" placeholder="Atlanta, GA" oninput="updateCardPreview()"></div></div><div class="form-group"><label>Email (for a thank you)</label><input type="email" id="cardEmail" placeholder="you@email.com"></div><button class="form-submit" onclick="submitCard()">Send Birthday Card 🎉</button></div></div></section>
+
+<section class="section upcoming-section" id="upcoming"><div class="section-header reveal"><div class="section-eyebrow">🎂 Coming Up</div><h2 class="section-title">Upcoming Birthdays</h2><p class="section-subtitle">These kids have parties coming! <a href="#send-card" style="color:var(--pink-deep);font-weight:700">Send them a card?</a></p></div><div class="upcoming-grid"><div class="upcoming-card reveal"><div class="upcoming-emoji">🦸</div><div class="upcoming-name">Aiden</div><div class="upcoming-detail">Turning 5 · Mar 2</div><div class="upcoming-theme">Superheroes</div></div><div class="upcoming-card reveal"><div class="upcoming-emoji">🦄</div><div class="upcoming-name">Sofia</div><div class="upcoming-detail">Turning 8 · Mar 10</div><div class="upcoming-theme">Unicorns</div></div><div class="upcoming-card reveal"><div class="upcoming-emoji">🏎️</div><div class="upcoming-name">Marcus</div><div class="upcoming-detail">Turning 12 · Mar 18</div><div class="upcoming-theme">Race Cars</div></div><div class="upcoming-card reveal"><div class="upcoming-emoji">🧜‍♀️</div><div class="upcoming-name">Lily</div><div class="upcoming-detail">Turning 4 · Mar 25</div><div class="upcoming-theme">Mermaids</div></div></div></section>
+
+<section class="section request-section" id="request"><div class="request-wrapper reveal"><h2>🎂 Request a Birthday Party</h2><p>Is your child spending their birthday in the hospital? We want to throw them a real party — balloons, cake, gifts, the works. Right in their room.</p><p style="font-size:1rem;font-weight:700;margin-top:6px">No cost. No paperwork. No stress.</p><div class="request-features"><div class="request-feature"><div class="check">✓</div><span>100% Free</span></div><div class="request-feature"><div class="check">✓</div><span>One Quick Form</span></div><div class="request-feature"><div class="check">✓</div><span>We Handle Everything</span></div><div class="request-feature"><div class="check">✓</div><span>Ages 1–18</span></div></div><div class="request-buttons"><a href="mailto:hello@theconfettiproject.co?subject=Birthday%20Party%20Request&body=Child's%20Name%3A%20%0AAge%3A%20%0ABirthday%3A%20%0AHospital%3A%20%0AWhat%20they%20love%3A%20%0AYour%20Name%3A%20%0ARelationship%3A%20%0APhone%3A%20" class="btn btn-white">Request a Party Now →</a><a href="#contact" class="btn btn-orange">Questions? We're Here</a></div></div></section>
+
+<section class="section fundraiser-section" id="fundraiser"><div class="fundraiser-wrapper"><div class="fundraiser-content reveal"><div class="section-eyebrow">🌟 First Fundraiser</div><h2>Confetti Gala 2025</h2><p>An evening of celebration, inspiration, and community — funding birthday parties for hospitalized children across Georgia.</p><div class="fundraiser-details"><div class="fundraiser-detail"><div class="fundraiser-detail-icon">📅</div><div class="fundraiser-detail-text"><h4>Date</h4><p>May 2025 · TBA</p></div></div><div class="fundraiser-detail"><div class="fundraiser-detail-icon">📍</div><div class="fundraiser-detail-text"><h4>Location</h4><p>Roswell, GA · TBA</p></div></div><div class="fundraiser-detail"><div class="fundraiser-detail-icon">🎯</div><div class="fundraiser-detail-text"><h4>Goal</h4><p>Fund 100 birthday celebrations</p></div></div><div class="fundraiser-detail"><div class="fundraiser-detail-icon">👗</div><div class="fundraiser-detail-text"><h4>Dress</h4><p>Cocktail · Confetti colors encouraged!</p></div></div></div><div style="margin-top:24px;display:flex;gap:14px;flex-wrap:wrap"><a href="mailto:hello@theconfettiproject.co?subject=Gala%20Tickets" class="btn btn-primary btn-sm">Get Notified</a><a href="mailto:hello@theconfettiproject.co?subject=Sponsorship" class="btn btn-secondary btn-sm">Sponsor</a></div></div><div class="fundraiser-visual reveal"><div class="countdown-card"><h3>🎊 Countdown to Gala</h3><div class="countdown-boxes"><div class="countdown-box"><span class="num" id="cd-days">--</span><span class="lbl">Days</span></div><div class="countdown-box"><span class="num" id="cd-hours">--</span><span class="lbl">Hrs</span></div><div class="countdown-box"><span class="num" id="cd-mins">--</span><span class="lbl">Min</span></div><div class="countdown-box"><span class="num" id="cd-secs">--</span><span class="lbl">Sec</span></div></div></div><div class="fundraiser-tiers"><div class="tier-card"><div class="tier-name">🥉 Bronze</div><div class="tier-price">$500</div></div><div class="tier-card"><div class="tier-name">🥈 Silver</div><div class="tier-price">$1,000</div></div><div class="tier-card"><div class="tier-name">🥇 Gold</div><div class="tier-price">$2,500</div></div><div class="tier-card"><div class="tier-name">💎 Confetti</div><div class="tier-price">$5,000</div></div></div></div></div></section>
+
+<section class="section founders-section" id="founders"><div class="section-header reveal"><div class="section-eyebrow">💜 Founders</div><h2 class="section-title">Built with Heart</h2></div><div class="founders-grid"><div class="founder-card reveal"><div class="founder-avatar">🎨</div><div class="founder-name">Lynn Lilly</div><div class="founder-role">Co-Founder</div><p class="founder-bio">Childhood cancer survivor who spent many birthdays in the hospital. Mom of two, owner of Confetti Clubhouse in Roswell, GA, and DIY expert featured on GMA, Hallmark, and NBC's Atlanta & Company.</p><div class="founder-highlight">✨ 12+ years in arts & crafts · Crayola, Brother & Michaels</div></div><div class="founder-card reveal"><div class="founder-avatar">🌟</div><div class="founder-name">Allison Murry</div><div class="founder-role">Co-Founder</div><p class="founder-bio">Community builder and nonprofit leader. Deep roots in Roswell, years of organizing events, and a professional background in strategic marketing and analytics. Brings heart and operational excellence.</p><div class="founder-highlight">✨ Fundraising, relationship-building & project management</div></div></div></section>
+
+<section class="section involved-section" id="get-involved"><div class="section-header reveal"><div class="section-eyebrow">🤝 Get Involved</div><h2 class="section-title">Help Us Throw More Parties</h2></div><div class="involvement-grid"><div class="involve-card reveal"><div class="involve-icon">🙋</div><h3>Volunteer</h3><p>Set up parties, deliver gifts, assemble kits, write cards.</p><a href="mailto:hello@theconfettiproject.co?subject=Volunteer" class="involve-btn">Join Team →</a></div><div class="involve-card reveal"><div class="involve-icon">💝</div><h3>Donate</h3><p>$100 = a complete birthday party for one child.</p><a href="#donate" class="involve-btn">Give Today →</a></div><div class="involve-card reveal"><div class="involve-icon">🏥</div><h3>Hospitals</h3><p>Partner with us to bring celebrations to your patients.</p><a href="mailto:hello@theconfettiproject.co?subject=Partnership" class="involve-btn">Partner →</a></div><div class="involve-card reveal"><div class="involve-icon">📦</div><h3>Wish List</h3><p>Buy balloons, craft kits, wrapping paper — shipped to us.</p><a href="#" class="involve-btn">Shop →</a></div></div></section>
+
+<section class="donate-section" id="donate"><div class="donate-wrapper"><div class="donate-content reveal"><div class="section-eyebrow" style="color:var(--pink)">💖 Donate</div><h2>Fund a Birthday Party</h2><p>Every dollar throws a real party. No middlemen — just cake, balloons, gifts, and one happy kid.</p><div class="donate-amounts"><div class="amount-card"><div class="amount-value">$25</div><div class="amount-desc">Balloons & crown</div></div><div class="amount-card"><div class="amount-value">$50</div><div class="amount-desc">Kit with cake & gifts</div></div><div class="amount-card"><div class="amount-value">$100</div><div class="amount-desc">Complete party</div></div><div class="amount-card"><div class="amount-value">Any $</div><div class="amount-desc">Every dollar counts</div></div></div><a href="mailto:hello@theconfettiproject.co?subject=Donation" class="btn btn-primary" onclick="triggerConfetti()">Donate Now 💖</a><p style="font-size:.82rem;color:rgba(255,255,255,0.6);margin-top:10px">501(c)(3) · All donations tax-deductible</p></div><div class="donate-visual reveal"><div class="impact-card"><div class="impact-emoji">🎈</div><div><h4>Boosts morale</h4><p>Celebrations reduce stress and improve well-being.</p></div></div><div class="impact-card"><div class="impact-emoji">👨‍👩‍👧</div><div><h4>Supports families</h4><p>The whole family feels cared for during hard times.</p></div></div><div class="impact-card"><div class="impact-emoji">🌟</div><div><h4>Lasts a lifetime</h4><p>A birthday party becomes a memory they carry forever.</p></div></div><div class="impact-card"><div class="impact-emoji">🎂</div><div><h4>No child missed</h4><p>Every hospitalized birthday kid gets a party. Period.</p></div></div></div></div></section>
+
+<section class="section faq-section" id="faq"><div class="section-header reveal"><div class="section-eyebrow">❓ FAQ</div><h2 class="section-title">Questions & Answers</h2></div><div class="faq-container"><div class="faq-item reveal"><div class="faq-question" onclick="toggleFaq(this)"><span>Who can request a celebration?</span><div class="faq-toggle">+</div></div><div class="faq-answer"><div class="faq-answer-inner">Anyone! Parents, grandparents, siblings, nurses, child life specialists, social workers, friends. Ages 1–18.</div></div></div><div class="faq-item reveal"><div class="faq-question" onclick="toggleFaq(this)"><span>Is there any cost?</span><div class="faq-toggle">+</div></div><div class="faq-answer"><div class="faq-answer-inner">Absolutely not. Every party is free — the cake, gifts, decorations, all of it. Funded by donors who believe every kid deserves a birthday.</div></div></div><div class="faq-item reveal"><div class="faq-question" onclick="toggleFaq(this)"><span>What happens at the celebration?</span><div class="faq-toggle">+</div></div><div class="faq-answer"><div class="faq-answer-inner">We bring a complete birthday party: themed decorations, balloons, banner, cake with candles, wrapped gifts, crown, crafts, and confetti. The whole room transforms.</div></div></div><div class="faq-item reveal"><div class="faq-question" onclick="toggleFaq(this)"><span>What hospitals do you serve?</span><div class="faq-toggle">+</div></div><div class="faq-answer"><div class="faq-answer-inner">Georgia-based, building partnerships across metro Atlanta and beyond. Want to partner? Reach out!</div></div></div><div class="faq-item reveal"><div class="faq-question" onclick="toggleFaq(this)"><span>How much advance notice?</span><div class="faq-toggle">+</div></div><div class="faq-answer"><div class="faq-answer-inner">2–3 weeks is ideal, but hospital stays are unpredictable. Even if the birthday is next week — reach out. We'll try.</div></div></div><div class="faq-item reveal"><div class="faq-question" onclick="toggleFaq(this)"><span>Tax-deductible?</span><div class="faq-toggle">+</div></div><div class="faq-answer"><div class="faq-answer-inner">Yes. Registered 501(c)(3). All donations are tax-deductible.</div></div></div></div></section>
+
+<section class="section contact-section" id="contact"><div class="section-header reveal"><div class="section-eyebrow">📬 Contact</div><h2 class="section-title">Let's Connect</h2></div><div class="contact-grid"><div class="contact-info-card reveal"><div class="contact-item"><div class="contact-icon">📧</div><div><h4>Email</h4><a href="mailto:hello@theconfettiproject.co">hello@theconfettiproject.co</a></div></div><div class="contact-item"><div class="contact-icon">🌐</div><div><h4>Website</h4><a href="https://theconfettiproject.co" target="_blank">theconfettiproject.co</a></div></div><div class="contact-item"><div class="contact-icon">📍</div><div><h4>Location</h4><p>Roswell, Georgia</p></div></div><div class="contact-item"><div class="contact-icon">🏢</div><div><h4>Our Family</h4><a href="https://confetticlubhouse.com" target="_blank">Confetti Clubhouse</a></div></div></div><div class="contact-form-card reveal"><h3>Message Us 💌</h3><form onsubmit="handleContactSubmit(event)"><div class="form-group"><label>Name</label><input type="text" required placeholder="Jane Smith"></div><div class="form-group"><label>Email</label><input type="email" required placeholder="jane@email.com"></div><div class="form-group"><label>Topic</label><select><option>Birthday celebration request</option><option>Volunteering</option><option>Donating</option><option>Hospital partnership</option><option>Sponsorship / Gala</option><option>Other</option></select></div><div class="form-group"><label>Message</label><textarea required placeholder="How can we help?"></textarea></div><button type="submit" class="form-submit">Send 🎉</button></form></div></div></section>
+
+<footer class="footer"><div class="footer-inner"><div class="footer-brand"><h3>🎉 The Confetti Project</h3><p>Real birthday parties for children in hospitals. Georgia 501(c)(3).</p><div class="footer-social"><a href="#">📸</a><a href="#">📘</a><a href="mailto:hello@theconfettiproject.co">📧</a></div></div><div class="footer-col"><h4>Quick Links</h4><a href="#mission">Mission</a><a href="#how-it-works">How It Works</a><a href="#birthday-wall">Birthday Wall</a><a href="#fundraiser">May Gala</a></div><div class="footer-col"><h4>Take Action</h4><a href="#request">Request a Party</a><a href="#send-card">Send a Card</a><a href="#get-involved">Volunteer</a><a href="#donate">Donate</a></div><div class="footer-col"><h4>Family</h4><a href="https://confetticlubhouse.com" target="_blank">Confetti Clubhouse</a><a href="#founders">Founders</a><a href="#contact">Contact</a></div></div><div class="footer-bottom"><span>&copy; 2025 The Confetti Project. 501(c)(3).</span><span>Made with 💖</span></div></footer>
+
+<script>
+const hamburger=document.getElementById('hamburger'),mobileMenu=document.getElementById('mobile-menu');hamburger.addEventListener('click',()=>mobileMenu.classList.toggle('active'));function closeMobile(){mobileMenu.classList.remove('active')}
+window.addEventListener('scroll',()=>{document.getElementById('navbar').classList.toggle('scrolled',window.scrollY>50)});
+function toggleFaq(el){const item=el.parentElement,answer=item.querySelector('.faq-answer'),act=item.classList.contains('active');document.querySelectorAll('.faq-item').forEach(i=>{i.classList.remove('active');i.querySelector('.faq-answer').style.maxHeight=null});if(!act){item.classList.add('active');answer.style.maxHeight=answer.scrollHeight+'px'}}
+const reveals=document.querySelectorAll('.reveal');const rObs=new IntersectionObserver(entries=>{entries.forEach((e,i)=>{if(e.isIntersecting){setTimeout(()=>e.target.classList.add('visible'),i*50);rObs.unobserve(e.target)}})},{threshold:.08,rootMargin:'0px 0px -30px 0px'});reveals.forEach(el=>rObs.observe(el));
+document.querySelectorAll('a[href^="#"]').forEach(a=>{a.addEventListener('click',function(e){e.preventDefault();const t=document.querySelector(this.getAttribute('href'));if(t)t.scrollIntoView({behavior:'smooth'})})});
+const canvas=document.getElementById('confetti-canvas'),ctx=canvas.getContext('2d');canvas.width=window.innerWidth;canvas.height=window.innerHeight;window.addEventListener('resize',()=>{canvas.width=window.innerWidth;canvas.height=window.innerHeight});
+const cColors=['#F472B6','#EC4899','#F59E0B','#F97316','#8B5CF6','#7C3AED','#22D3EE','#06B6D4','#A78BFA','#FB923C'];let cPcs=[];
+function createConfetti(n){for(let i=0;i<n;i++)cPcs.push({x:Math.random()*canvas.width,y:-10-Math.random()*canvas.height*.5,w:Math.random()*10+5,h:Math.random()*6+3,c:cColors[Math.floor(Math.random()*cColors.length)],r:Math.random()*360,rs:(Math.random()-.5)*10,sx:(Math.random()-.5)*4,sy:Math.random()*3+2,o:1,fr:Math.random()*.005+.002})}
+function animateConfetti(){ctx.clearRect(0,0,canvas.width,canvas.height);cPcs=cPcs.filter(p=>{p.x+=p.sx;p.y+=p.sy;p.r+=p.rs;p.o-=p.fr;if(p.o<=0||p.y>canvas.height+20)return false;ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.r*Math.PI/180);ctx.globalAlpha=p.o;ctx.fillStyle=p.c;ctx.fillRect(-p.w/2,-p.h/2,p.w,p.h);ctx.restore();return true});if(cPcs.length>0)requestAnimationFrame(animateConfetti)}
+function triggerConfetti(){createConfetti(100);animateConfetti()}
+setTimeout(()=>{createConfetti(120);animateConfetti()},500);
+['request','donate'].forEach(id=>{const el=document.getElementById(id);if(el){const obs=new IntersectionObserver(entries=>{entries.forEach(e=>{if(e.isIntersecting){triggerConfetti();obs.unobserve(e.target)}})},{threshold:.3});obs.observe(el)}});
+function animateCounter(id,target,s=''){const el=document.getElementById(id);let c=0;const inc=Math.ceil(target/60);const t=setInterval(()=>{c+=inc;if(c>=target){c=target;clearInterval(t)}el.textContent=c.toLocaleString()+s},30)}
+const cntObs=new IntersectionObserver(entries=>{entries.forEach(e=>{if(e.isIntersecting){animateCounter('counter-celebrations',24);animateCounter('counter-smiles',24,'+');animateCounter('counter-hospitals',3);animateCounter('counter-volunteers',15);animateCounter('counter-cards',47);cntObs.unobserve(e.target)}})},{threshold:.5});cntObs.observe(document.querySelector('.counter-ribbon'));
+function updateCountdown(){const g=new Date('2025-05-17T18:00:00'),n=new Date(),d=g-n;if(d<=0)return;document.getElementById('cd-days').textContent=Math.floor(d/864e5);document.getElementById('cd-hours').textContent=Math.floor(d%864e5/36e5);document.getElementById('cd-mins').textContent=Math.floor(d%36e5/6e4);document.getElementById('cd-secs').textContent=Math.floor(d%6e4/1e3)}updateCountdown();setInterval(updateCountdown,1000);
+function updateCardPreview(){const to=document.getElementById('cardRecipient').value,msg=document.getElementById('cardMessage').value,from=document.getElementById('cardFrom').value,city=document.getElementById('cardFromCity').value;document.getElementById('previewTo').textContent=to?'Happy Birthday, '+to+'!':'Happy Birthday!';document.getElementById('previewMessage').textContent=msg||'Your message appears here as you type...';let f='— With love';if(from)f='— With love, '+from;if(from&&city)f+=' from '+city;document.getElementById('previewFrom').textContent=f;document.getElementById('cardPreview').classList.toggle('filled',!!(to||msg||from))}
+function submitCard(){const msg=document.getElementById('cardMessage').value,from=document.getElementById('cardFrom').value;if(!msg){alert('Please write a message!');return}if(!from){alert('Please add your name!');return}document.getElementById('cardModal').classList.add('active');triggerConfetti();['cardRecipient','cardMessage','cardFrom','cardFromCity','cardEmail'].forEach(id=>document.getElementById(id).value='');updateCardPreview()}
+function handleContactSubmit(e){e.preventDefault();alert('Sent! We\'ll be in touch soon. 🎉');e.target.reset()}
+</script>
+</body>
+</html>
